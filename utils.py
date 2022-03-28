@@ -9,6 +9,10 @@ class InvalidASNorIP(Exception):
     pass
 
 
+class NoGPGFingerprint(Exception):
+    pass
+
+
 def get_maintainer(asn_or_ip):
     data = subprocess.check_output(['whois', '-h', WHOIS_SERVER, asn_or_ip]).decode().strip()
     if data.endswith('% 404') or data.endswith('% This is the dn42 whois query service.'):
@@ -24,9 +28,10 @@ def get_gpg_key(mntner):
     data = subprocess.check_output(['whois', '-h', WHOIS_SERVER, mntner]).decode().strip()
     if data[-5:] == '% 404':
         raise InvalidASNorIP()
-    gpg_key = \
-    [line.split('\n') for line in data.split('\n') if line.startswith('auth:               pgp-fingerprint')][-1][
-        0].strip().split(' ')[-1]
+    lines = [line.split('\n') for line in data.split('\n') if line.startswith('auth:               pgp-fingerprint')]
+    if len(lines) == 0:
+        raise NoGPGFingerprint()
+    gpg_key = lines[-1][0].strip().split(' ')[-1]
     return gpg_key
 
 

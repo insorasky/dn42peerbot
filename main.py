@@ -129,13 +129,19 @@ def gpg_pubkey(update: Update, context: CallbackContext):
         update.message.reply_text('Invalid ASN. Peering process is canceled.')
         return ConversationHandler.END
     if len(update.message.text) != 12:
-        update.message.reply_text('Thank you for peering with me. You have a special ASN, so please contact @TheresaJune for peering. Peering process is canceled.')
+        update.message.reply_text('Thank you for peering with me. You have a special ASN, so please contact '
+                                  '@TheresaJune for peering. Peering process is canceled.')
         return ConversationHandler.END
     try:
         context.user_data['asn'], context.user_data['mntner'] = get_maintainer(update.message.text)
         context.user_data['gpg_id'] = get_gpg_key(context.user_data['mntner'])
     except InvalidASNorIP:
         update.message.reply_text('ASN not found in DN42 registry. Peering process is canceled.')
+        return ConversationHandler.END
+    except NoGPGFingerprint:
+        update.message.reply_text('Currently this bot only supports networks whose maintainer registered an OpenPGP '
+                                  'fingerprint on DN42 registry. You may peer with me by contacting @TheresaJune. '
+                                  'Peering process is canceled.')
         return ConversationHandler.END
     update.message.reply_text(f'Please send me your GPG public key `{context.user_data["gpg_id"]}` as an attachment:', parse_mode='MarkdownV2')
     return GPG_SIGN
