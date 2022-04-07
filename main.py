@@ -289,7 +289,7 @@ def end(update: Update, context: CallbackContext):
     else:
         update.message.reply_text('Invalid input.')
         return END
-    update.message.reply_text(f'We have configured your peer\. \nYou should write `{LOCAL_ENDPOINT}:{context.user_data["asn"][-5:]}` as endpoint in your WireGuard configuration. You can now check the peering status\.', parse_mode='MarkdownV2')
+    update.message.reply_text(f'We have configured your peer\. \nYou should write `{LOCAL_ENDPOINT}:{context.user_data["asn"][-5:]}` as endpoint in your WireGuard configuration\. You can now check the peering status\.', parse_mode='MarkdownV2')
     return ConversationHandler.END
 
 
