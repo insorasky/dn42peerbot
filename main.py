@@ -49,7 +49,7 @@ def ping(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /ping [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('dn42') and not context.args[0].endswith('neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Pinging...')
@@ -64,7 +64,7 @@ def ping4(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /ping4 [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('dn42') and not context.args[0].endswith('neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Pinging...')
@@ -79,7 +79,7 @@ def ping6(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /ping6 [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('dn42') and not context.args[0].endswith('neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Pinging...')
@@ -94,7 +94,7 @@ def traceroute(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /traceroute [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('dn42') and not context.args[0].endswith('neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Tracing route in 10s...')
@@ -109,7 +109,7 @@ def traceroute4(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /traceroute4 [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('dn42') and not context.args[0].endswith('neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Tracing route in 10s...')
@@ -124,7 +124,7 @@ def traceroute6(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /traceroute6 [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('dn42') and not context.args[0].endswith('neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Tracing route in 10s...')
