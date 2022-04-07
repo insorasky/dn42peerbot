@@ -26,6 +26,7 @@ aes = AES.new(IPID_KEY.encode(), AES.MODE_ECB)
 
 ipv4_pattern = re.compile(r'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
 dn42_ipv4_pattern = re.compile(r'^172\.2[0-3]\.((25[0-5]|2[0-4]\d|[01]?\d\d?)\.)(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
+neo_ipv4_pattern = re.compile(r'^10\.127\.((25[0-5]|2[0-4]\d|[01]?\d\d?)\.)(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
 ipv6_pattern = re.compile(r'^([\da-fA-F]{1,4}:){6}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^::([\da-fA-F]{1,4}:){0,4}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:):([\da-fA-F]{1,4}:){0,3}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){2}:([\da-fA-F]{1,4}:){0,2}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){3}:([\da-fA-F]{1,4}:){0,1}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){4}:((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){7}[\da-fA-F]{1,4}$|^:((:[\da-fA-F]{1,4}){1,6}|:)$|^[\da-fA-F]{1,4}:((:[\da-fA-F]{1,4}){1,5}|:)$|^([\da-fA-F]{1,4}:){2}((:[\da-fA-F]{1,4}){1,4}|:)$|^([\da-fA-F]{1,4}:){3}((:[\da-fA-F]{1,4}){1,3}|:)$|^([\da-fA-F]{1,4}:){4}((:[\da-fA-F]{1,4}){1,2}|:)$|^([\da-fA-F]{1,4}:){5}:([\da-fA-F]{1,4})?$|^([\da-fA-F]{1,4}:){6}:$')
 domain_pattern = re.compile(r'^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$')
 wireguard_key_pattern = re.compile(r'^[0-9A-Za-z+/=]{44}$')
@@ -47,6 +48,10 @@ def ping(update: Update, context: CallbackContext):
     if len(context.args) == 0:
         update.message.reply_text('Usage: /ping [target]')
         return
+    if CERNET:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+            update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
+            return
     msg = update.message.reply_text('Pinging...')
     msg.edit_text('```\n' + subprocess.run(
             ['ping', context.args[0], '-c', '4', '-W', '5'],
@@ -58,6 +63,10 @@ def ping4(update: Update, context: CallbackContext):
     if len(context.args) == 0:
         update.message.reply_text('Usage: /ping4 [target]')
         return
+    if CERNET:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+            update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
+            return
     msg = update.message.reply_text('Pinging...')
     msg.edit_text('```\n' + subprocess.run(
             ['ping', context.args[0], '-c', '4', '-W', '5', '-4'],
@@ -69,6 +78,10 @@ def ping6(update: Update, context: CallbackContext):
     if len(context.args) == 0:
         update.message.reply_text('Usage: /ping6 [target]')
         return
+    if CERNET:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+            update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
+            return
     msg = update.message.reply_text('Pinging...')
     msg.edit_text('```\n' + subprocess.run(
             ['ping', context.args[0], '-c', '4', '-W', '5', '-6'],
@@ -80,6 +93,10 @@ def traceroute(update: Update, context: CallbackContext):
     if len(context.args) == 0:
         update.message.reply_text('Usage: /traceroute [target]')
         return
+    if CERNET:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+            update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
+            return
     msg = update.message.reply_text('Tracing route in 10s...')
     msg.edit_text('```\n' + subprocess.run(
             ['timeout', '15s', 'traceroute', context.args[0]],
@@ -91,6 +108,10 @@ def traceroute4(update: Update, context: CallbackContext):
     if len(context.args) == 0:
         update.message.reply_text('Usage: /traceroute4 [target]')
         return
+    if CERNET:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+            update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
+            return
     msg = update.message.reply_text('Tracing route in 10s...')
     msg.edit_text('```\n' + subprocess.run(
             ['timeout', '15s', 'traceroute', '-4', context.args[0]],
@@ -102,6 +123,10 @@ def traceroute6(update: Update, context: CallbackContext):
     if len(context.args) == 0:
         update.message.reply_text('Usage: /traceroute6 [target]')
         return
+    if CERNET:
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None:
+            update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
+            return
     msg = update.message.reply_text('Tracing route in 10s...')
     msg.edit_text('```\n' + subprocess.run(
             ['timeout', '15s', 'traceroute', '-6', context.args[0]],
