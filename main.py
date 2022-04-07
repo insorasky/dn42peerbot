@@ -1,5 +1,7 @@
 from telegram.ext import Updater, CommandHandler, CallbackContext, ConversationHandler, MessageHandler, Filters
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
+from Crypto.Cipher import AES
+from base64 import b64decode
 
 from utils import *
 from wireguard import *
@@ -19,6 +21,8 @@ dispatcher = updater.dispatcher
 if not os.path.exists(GNUPG_HOME):
     os.makedirs(GNUPG_HOME)
 gpg = gnupg.GPG(gnupghome=GNUPG_HOME)
+
+aes = AES.new(IPID_KEY.encode(), AES.MODE_ECB)
 
 ipv4_pattern = re.compile(r'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
 dn42_ipv4_pattern = re.compile(r'^172\.2[0-3]\.((25[0-5]|2[0-4]\d|[01]?\d\d?)\.)(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
@@ -106,7 +110,7 @@ def traceroute6(update: Update, context: CallbackContext):
 
 
 # States of peering conversation
-GPG_PUBKEY, GPG_SIGN, ENDPOINT, PORT, IPV4, LINK_LOCAL, PUBLICKEY, MP, END = range(9)
+GPG_PUBKEY, GPG_SIGN, SSH_SIGN, ENDPOINT, PORT, IPV4, LINK_LOCAL, PUBLICKEY, MP, END = range(10)
 
 
 def cancel(update: Update, context: CallbackContext):
@@ -136,8 +140,8 @@ def gpg_pubkey(update: Update, context: CallbackContext):
         context.user_data['asn'], context.user_data['mntner'] = get_maintainer(update.message.text)
         context.user_data['gpg_id'] = get_gpg_key(context.user_data['mntner'])
     except InvalidASNorIP:
-        update.message.reply_text('ASN not found in DN42 registry. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('ASN not found in DN42 registry. Please try again.')
+        return GPG_PUBKEY
     except NoGPGFingerprint:
         update.message.reply_text('Currently this bot only supports networks whose maintainer registered an OpenPGP '
                                   'fingerprint on DN42 registry. You may peer with me by contacting @TheresaJune. '
@@ -150,12 +154,12 @@ def gpg_pubkey(update: Update, context: CallbackContext):
 def gpg_sign(update: Update, context: CallbackContext):
     document = update.message.document
     if document.file_size > 100 * 1024:
-        update.message.reply_text('File is larger than 100KB. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('File is larger than 100KB. Please try again.')
+        return GPG_SIGN
     gpg_import = gpg.import_keys(context.bot.get_file(document.file_id).download_as_bytearray())
     if context.user_data["gpg_id"] not in gpg_import.fingerprints:
-        update.message.reply_text('Invalid GPG public key or the key does not match your fingerprint. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('Invalid GPG public key or the key does not match your fingerprint. Please try again.')
+        return GPG_SIGN
     context.user_data['arg'] = get_arg(context.user_data['asn'])
     update.message.reply_text(f'Please sign the string `{context.user_data["arg"]}` with GPG key `{context.user_data["gpg_id"]}` and reply your '
                               f'cleartext signature\.', parse_mode='MarkdownV2')
@@ -169,27 +173,49 @@ def endpoint(update: Update, context: CallbackContext):
     gpg_verify = gpg.verify_data(f'/tmp/{context.user_data["gpg_id"]}_{context.user_data["arg"]}.asc', context.user_data['arg'].encode())
     os.remove(f'/tmp/{context.user_data["gpg_id"]}_{context.user_data["arg"]}.asc')
     if not gpg_verify.valid or gpg_verify.pubkey_fingerprint != context.user_data['gpg_id']:
-        update.message.reply_text('Invalid signature. Peering process is canceled.')
-        return ConversationHandler.END
-    update.message.reply_text(f'Please send me your endpoint\. The endpoint should be like `endpoint.example.com` '
-                              f'or `12.34.56.78` or `2001:123::1`\.', parse_mode='MarkdownV2')
-    return PORT
+        update.message.reply_text('Invalid signature. Please try again.')
+        return ENDPOINT
+    if CERNET:
+        update.message.reply_text('Please visit https://ipid.mol.moe/ with your CERNET IPv6 address. Make sure the IP '
+                                  'shown on this site is your CERNET IPv6 endpoint and send the IPID to me.')
+        return PORT
+    else:
+        update.message.reply_text(f'Please send me your endpoint\. The endpoint should be like `endpoint.example.com` '
+                                  f'or `12.34.56.78` or `2001:123::1`\.', parse_mode='MarkdownV2')
+        return PORT
 
 
 def port(update: Update, context: CallbackContext):
-    endpoint_type = None
-    if re.match(ipv4_pattern, update.message.text) is not None:
-        endpoint_type = 'ipv4'
-        context.user_data['endpoint'] = update.message.text
-    elif re.match(ipv6_pattern, update.message.text) is not None:
-        endpoint_type = 'ipv6'
-        context.user_data['endpoint'] = '[' + update.message.text + ']'
-    elif re.match(domain_pattern, update.message.text) is not None:
-        endpoint_type = 'domain'
-        context.user_data['endpoint'] = update.message.text
-    if endpoint_type is None:
-        update.message.reply_text('Invalid endpoint. Peering process is canceled.')
-        return ConversationHandler.END
+    if CERNET:
+        try:
+            ip, timestamp = aes.decrypt(b64decode(update.message.text)).decode().split('|')
+            timestamp = int(timestamp[:10])
+            logging.debug(ip)
+            logging.debug(timestamp)
+            if time.time() - timestamp > 300:
+                update.message.reply_text('Your IPID is expired. Please try again.')
+                return PORT
+            if not ip.startswith('2001:da8:') and not ip.startswith('2001:250:'):
+                update.message.reply_text('Invalid CERNET IPv6. Please try again.')
+                return PORT
+            context.user_data['endpoint'] = '[' + ip + ']'
+        except Exception:
+            update.message.reply_text('Invalid IPID. Please try again.')
+            return PORT
+    else:
+        endpoint_type = None
+        if re.match(ipv4_pattern, update.message.text) is not None:
+            endpoint_type = 'ipv4'
+            context.user_data['endpoint'] = update.message.text
+        elif re.match(ipv6_pattern, update.message.text) is not None:
+            endpoint_type = 'ipv6'
+            context.user_data['endpoint'] = '[' + update.message.text + ']'
+        elif re.match(domain_pattern, update.message.text) is not None:
+            endpoint_type = 'domain'
+            context.user_data['endpoint'] = update.message.text
+        if endpoint_type is None:
+            update.message.reply_text('Invalid endpoint. Please try again.')
+            return ENDPOINT
     update.message.reply_text(f'Please send me your listening port of the tunnel.')
     return IPV4
 
@@ -200,8 +226,8 @@ def ipv4(update: Update, context: CallbackContext):
         if int(update.message.text) < 0 or int(update.message.text) > 65536:
             raise ValueError
     except ValueError:
-        update.message.reply_text('Invalid port. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('Invalid port. Please try again.')
+        return IPV4
     update.message.reply_text(f'Please send me your DN42 IPv4 address.')
     return LINK_LOCAL
 
@@ -209,12 +235,12 @@ def ipv4(update: Update, context: CallbackContext):
 def link_local(update: Update, context: CallbackContext):
     context.user_data['ipv4'] = update.message.text
     if re.match(dn42_ipv4_pattern, update.message.text) is None:
-        update.message.reply_text('Invalid DN42 IPv4. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('Invalid DN42 IPv4.Please try again.')
+        return LINK_LOCAL
     asn, _ = get_maintainer(update.message.text)
     if context.user_data['asn'] != asn:
-        update.message.reply_text('ASN of DN42 IPv4 does not match. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('ASN of DN42 IPv4 does not match. Please try again.')
+        return LINK_LOCAL
     update.message.reply_text(f'Please send me your IPv6 link-local address of the tunnel.')
     return PUBLICKEY
 
@@ -222,8 +248,8 @@ def link_local(update: Update, context: CallbackContext):
 def publickey(update: Update, context: CallbackContext):
     context.user_data['link_local'] = update.message.text
     if re.match(ipv6_pattern, update.message.text) is None or not update.message.text.startswith('fe80'):
-        update.message.reply_text('Invalid link-local IPv6 address. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('Invalid link-local IPv6 address. Please try again.')
+        return PUBLICKEY
     update.message.reply_text(f'Please send me your WireGuard public key:')
     return MP
 
@@ -231,8 +257,8 @@ def publickey(update: Update, context: CallbackContext):
 def mp(update: Update, context: CallbackContext):
     context.user_data['publickey'] = update.message.text
     if re.match(wireguard_key_pattern, update.message.text) is None:
-        update.message.reply_text('Invalid WireGuard public key. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('Invalid WireGuard public key. Please try again.')
+        return MP
     markup = ReplyKeyboardMarkup(keyboard=[['Yes', 'No']], one_time_keyboard=True)
     update.message.reply_text('Do you want to enable multi-protocol?', reply_markup=markup)
     return END
@@ -261,8 +287,8 @@ def end(update: Update, context: CallbackContext):
             context.user_data['link_local'],
         )
     else:
-        update.message.reply_text('Invalid input. Peering process is canceled.')
-        return ConversationHandler.END
+        update.message.reply_text('Invalid input.')
+        return END
     update.message.reply_text(f'We have configured your peer\. \nYou should write `{LOCAL_ENDPOINT}:{context.user_data["asn"][-5:]}` as endpoint in your WireGuard configuration. You can now check the peering status\.', parse_mode='MarkdownV2')
     return ConversationHandler.END
 

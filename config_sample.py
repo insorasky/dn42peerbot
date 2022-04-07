@@ -10,3 +10,5 @@ WG_PEERS_BASE = '/etc/wireguard'
 BIRD_PEERS_BASE = '/etc/bird/peers'
 GNUPG_HOME = '/tmp/dn42bot'
 LOCAL_ENDPOINT = ''
+CERNET = False
+IPID_KEY = ''
