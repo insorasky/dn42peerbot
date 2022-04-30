@@ -3,6 +3,7 @@ cachetools==4.2.2
 certifi==2021.10.8
 charset-normalizer==2.0.12
 idna==3.3
+pycryptodome==3.14.1
 PySocks==1.7.1
 python-gnupg==0.4.8
 python-telegram-bot==13.11
