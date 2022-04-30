@@ -27,7 +27,8 @@ aes = AES.new(IPID_KEY.encode(), AES.MODE_ECB)
 ipv4_pattern = re.compile(r'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
 dn42_ipv4_pattern = re.compile(r'^172\.2[0-3]\.((25[0-5]|2[0-4]\d|[01]?\d\d?)\.)(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
 neo_ipv4_pattern = re.compile(r'^10\.127\.((25[0-5]|2[0-4]\d|[01]?\d\d?)\.)(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
-ipv6_pattern = re.compile(r'^([\da-fA-F]{1,4}:){6}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^::([\da-fA-F]{1,4}:){0,4}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:):([\da-fA-F]{1,4}:){0,3}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){2}:([\da-fA-F]{1,4}:){0,2}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){3}:([\da-fA-F]{1,4}:){0,1}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){4}:((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){7}[\da-fA-F]{1,4}$|^:((:[\da-fA-F]{1,4}){1,6}|:)$|^[\da-fA-F]{1,4}:((:[\da-fA-F]{1,4}){1,5}|:)$|^([\da-fA-F]{1,4}:){2}((:[\da-fA-F]{1,4}){1,4}|:)$|^([\da-fA-F]{1,4}:){3}((:[\da-fA-F]{1,4}){1,3}|:)$|^([\da-fA-F]{1,4}:){4}((:[\da-fA-F]{1,4}){1,2}|:)$|^([\da-fA-F]{1,4}:){5}:([\da-fA-F]{1,4})?$|^([\da-fA-F]{1,4}:){6}:$')
+ipv6_pattern = re.compile(
+    r'^([\da-fA-F]{1,4}:){6}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^::([\da-fA-F]{1,4}:){0,4}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:):([\da-fA-F]{1,4}:){0,3}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){2}:([\da-fA-F]{1,4}:){0,2}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){3}:([\da-fA-F]{1,4}:){0,1}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){4}:((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){7}[\da-fA-F]{1,4}$|^:((:[\da-fA-F]{1,4}){1,6}|:)$|^[\da-fA-F]{1,4}:((:[\da-fA-F]{1,4}){1,5}|:)$|^([\da-fA-F]{1,4}:){2}((:[\da-fA-F]{1,4}){1,4}|:)$|^([\da-fA-F]{1,4}:){3}((:[\da-fA-F]{1,4}){1,3}|:)$|^([\da-fA-F]{1,4}:){4}((:[\da-fA-F]{1,4}){1,2}|:)$|^([\da-fA-F]{1,4}:){5}:([\da-fA-F]{1,4})?$|^([\da-fA-F]{1,4}:){6}:$')
 domain_pattern = re.compile(r'^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$')
 wireguard_key_pattern = re.compile(r'^[0-9A-Za-z+/=]{44}$')
 
@@ -49,14 +50,16 @@ def ping(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /ping [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern,
+                                                                             context.args[0]) is None and not \
+        context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Pinging...')
     msg.edit_text('```\n' + subprocess.run(
-            ['ping', context.args[0], '-c', '4', '-W', '5'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
+        ['ping', context.args[0], '-c', '4', '-W', '5'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
 
 
 def ping4(update: Update, context: CallbackContext):
@@ -64,14 +67,16 @@ def ping4(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /ping4 [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern,
+                                                                             context.args[0]) is None and not \
+        context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Pinging...')
     msg.edit_text('```\n' + subprocess.run(
-            ['ping', context.args[0], '-c', '4', '-W', '5', '-4'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
+        ['ping', context.args[0], '-c', '4', '-W', '5', '-4'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
 
 
 def ping6(update: Update, context: CallbackContext):
@@ -79,14 +84,16 @@ def ping6(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /ping6 [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern,
+                                                                             context.args[0]) is None and not \
+        context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Pinging...')
     msg.edit_text('```\n' + subprocess.run(
-            ['ping', context.args[0], '-c', '4', '-W', '5', '-6'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
+        ['ping', context.args[0], '-c', '4', '-W', '5', '-6'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
 
 
 def traceroute(update: Update, context: CallbackContext):
@@ -94,14 +101,16 @@ def traceroute(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /traceroute [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern,
+                                                                             context.args[0]) is None and not \
+        context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Tracing route in 10s...')
     msg.edit_text('```\n' + subprocess.run(
-            ['timeout', '15s', 'traceroute', context.args[0]],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
+        ['timeout', '15s', 'traceroute', context.args[0]],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
 
 
 def traceroute4(update: Update, context: CallbackContext):
@@ -109,14 +118,16 @@ def traceroute4(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /traceroute4 [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern,
+                                                                             context.args[0]) is None and not \
+        context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Tracing route in 10s...')
     msg.edit_text('```\n' + subprocess.run(
-            ['timeout', '15s', 'traceroute', '-4', context.args[0]],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
+        ['timeout', '15s', 'traceroute', '-4', context.args[0]],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
 
 
 def traceroute6(update: Update, context: CallbackContext):
@@ -124,14 +135,16 @@ def traceroute6(update: Update, context: CallbackContext):
         update.message.reply_text('Usage: /traceroute6 [target]')
         return
     if CERNET:
-        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern, context.args[0]) is None and not context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
+        if re.match(dn42_ipv4_pattern, context.args[0]) is None and re.match(neo_ipv4_pattern,
+                                                                             context.args[0]) is None and not \
+        context.args[0].endswith('.dn42') and not context.args[0].endswith('.neo'):
             update.message.reply_text('Only DN42 ping is allowed on Chinese nodes.')
             return
     msg = update.message.reply_text('Tracing route in 10s...')
     msg.edit_text('```\n' + subprocess.run(
-            ['timeout', '15s', 'traceroute', '-6', context.args[0]],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
+        ['timeout', '15s', 'traceroute', '-6', context.args[0]],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT).stdout.decode() + '\n```', parse_mode='MarkdownV2', reply_markup=wait_for_peer_markup)
 
 
 # States of peering conversation
@@ -147,9 +160,10 @@ def peer(update: Update, context: CallbackContext):
     if update.effective_chat.type != 'private':
         update.message.reply_text('This command can be used only in private chat.')
         return ConversationHandler.END
-    update.message.reply_text(f'Welcome to peering with me\! Send me with /cancel to cancel your request\. Please send me '
-                              f'your DN42 ASN\. The ASN is like `AS424242XXXX` and should be registered on '
-                              f'https://git\.dn42\.dev/ first\.', parse_mode='MarkdownV2')
+    update.message.reply_text(
+        f'Welcome to peering with me\! Send me with /cancel to cancel your request\. Please send me '
+        f'your DN42 ASN\. The ASN is like `AS424242XXXX` and should be registered on '
+        f'https://git\.dn42\.dev/ first\.', parse_mode='MarkdownV2')
     return GPG_PUBKEY
 
 
@@ -172,7 +186,8 @@ def gpg_pubkey(update: Update, context: CallbackContext):
                                   'fingerprint on DN42 registry. You may peer with me by contacting @TheresaJune. '
                                   'Peering process is canceled.')
         return ConversationHandler.END
-    update.message.reply_text(f'Please send me your GPG public key `{context.user_data["gpg_id"]}` as an attachment:', parse_mode='MarkdownV2')
+    update.message.reply_text(f'Please send me your GPG public key `{context.user_data["gpg_id"]}` as an attachment:',
+                              parse_mode='MarkdownV2')
     return GPG_SIGN
 
 
@@ -183,11 +198,13 @@ def gpg_sign(update: Update, context: CallbackContext):
         return GPG_SIGN
     gpg_import = gpg.import_keys(context.bot.get_file(document.file_id).download_as_bytearray())
     if context.user_data["gpg_id"] not in gpg_import.fingerprints:
-        update.message.reply_text('Invalid GPG public key or the key does not match your fingerprint. Please try again.')
+        update.message.reply_text(
+            'Invalid GPG public key or the key does not match your fingerprint. Please try again.')
         return GPG_SIGN
     context.user_data['arg'] = get_arg(context.user_data['asn'])
-    update.message.reply_text(f'Please sign the string `{context.user_data["arg"]}` with GPG key `{context.user_data["gpg_id"]}` and reply your '
-                              f'cleartext signature\.', parse_mode='MarkdownV2')
+    update.message.reply_text(
+        f'Please sign the string `{context.user_data["arg"]}` with GPG key `{context.user_data["gpg_id"]}` and reply your '
+        f'cleartext signature\.', parse_mode='MarkdownV2')
     return ENDPOINT
 
 
@@ -195,7 +212,8 @@ def endpoint(update: Update, context: CallbackContext):
     context.user_data['gpg_sign'] = update.message.text
     with open(f'/tmp/{context.user_data["gpg_id"]}_{context.user_data["arg"]}.asc', 'w') as f:
         f.write(update.message.text)
-    gpg_verify = gpg.verify_data(f'/tmp/{context.user_data["gpg_id"]}_{context.user_data["arg"]}.asc', context.user_data['arg'].encode())
+    gpg_verify = gpg.verify_data(f'/tmp/{context.user_data["gpg_id"]}_{context.user_data["arg"]}.asc',
+                                 context.user_data['arg'].encode())
     os.remove(f'/tmp/{context.user_data["gpg_id"]}_{context.user_data["arg"]}.asc')
     if not gpg_verify.valid or gpg_verify.pubkey_fingerprint != context.user_data['gpg_id']:
         update.message.reply_text('Invalid signature. Please try again.')
@@ -314,7 +332,9 @@ def end(update: Update, context: CallbackContext):
     else:
         update.message.reply_text('Invalid input.')
         return END
-    update.message.reply_text(f'We have configured your peer\. \nYou should write `{LOCAL_ENDPOINT}:{context.user_data["asn"][-5:]}` as endpoint in your WireGuard configuration\. You can now check the peering status\.', parse_mode='MarkdownV2')
+    update.message.reply_text(
+        f'We have configured your peer\. \nYou should write `{LOCAL_ENDPOINT}:{context.user_data["asn"][-5:]}` as endpoint in your WireGuard configuration\. You can now check the peering status\.',
+        parse_mode='MarkdownV2')
     return ConversationHandler.END
 
 
@@ -325,6 +345,13 @@ def delete(update: Update, context: CallbackContext):
 def error(update: Update, context: CallbackContext):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
     update.message.reply_text('Ouch, something went wrong. Please report this issue to @TheresaJune.')
+
+
+def tietie(update: Update, context: CallbackContext):
+    msg = update.message.reply_to_message if update.message.reply_to_message else update.message
+    msg.reply_text(f'贴贴！这里是 MolMoe Network 的 {NODE_NAME} 号贴贴 Bot！\n'
+                   f'如果您想贴(pi)贴(er)，欢迎点击我的头像，回复 /peer 呢～么么哒～\n'
+                   f'或者点击 @molmoe42 ，和我的其他分身贴贴，开后宫～')
 
 
 if __name__ == '__main__':
@@ -354,6 +381,7 @@ if __name__ == '__main__':
     dispatcher.add_handler(CommandHandler('traceroute4', traceroute4, run_async=True))
     dispatcher.add_handler(CommandHandler('traceroute6', traceroute6, run_async=True))
     dispatcher.add_handler(CommandHandler('delete', delete, run_async=True))
+    dispatcher.add_handler(CommandHandler('tietie', tietie, run_async=True))
     dispatcher.add_error_handler(error)
 
     updater.start_polling()
